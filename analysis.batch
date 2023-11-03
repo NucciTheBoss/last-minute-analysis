@@ -13,8 +13,8 @@ echo Data analysis has started on $(hostname) at $(date)
 cd ${SLURM_SUBMIT_DIR}
 . venv/bin/activate
 
-# Create the fragments in ~/scratch/tmp
-bin/fragmentor -i data/data.csv -f 4 -p ~/scratch/tmp/
+# Create the fragments in current working directory.
+bin/fragmentor -i data/data.csv -f 4 -p $PWD
 
 # Functions to be used with GNU parallel
 function analysis_1 () {
