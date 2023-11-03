@@ -2,7 +2,7 @@
 #SBATCH --job-name=analysis
 #SBATCH --partition=compute
 #SBATCH --nodes=1
-#SBATCH --mem=500mb
+#SBATCH --mem=1G
 #SBATCH --time=00:01:00
 #SBATCH --error=analysis.err
 #SBATCH --output=analysis.out
@@ -14,55 +14,16 @@ cd ${SLURM_SUBMIT_DIR}
 . venv/bin/activate
 
 # Create the fragments in current working directory.
-bin/fragmentor -i data/data.csv -f 4 -p $PWD
-
-# Functions to be used with GNU parallel
-function analysis_1 () {
-    cd ${SLURM_SUBMIT_DIR}
-    . venv/bin/activate
-    bin/analysis -i $1 -c determine_most_popular_email
-}
-
-function analysis_2 () {
-    . venv/bin/activate
-    bin/analysis -i $1 -c determine_most_popular_free_email
-}
-
-function analysis_3 () {
-    cd ${SLURM_SUBMIT_DIR}
-    . venv/bin/activate
-    bin/analysis -i $1 -c determine_most_popular_document_format
-}
-
-function analysis_4 () {
-    cd ${SLURM_SUBMIT_DIR}
-    . venv/bin/activate
-    bin/analysis -i $1 -c determine_most_popular_audio_format
-}
-
-function analysis_5 () {
-    cd ${SLURM_SUBMIT_DIR}
-    . venv/bin/activate
-    bin/analysis -i $1 -c determine_most_popular_image_format
-}
-
-# Export functions so they can be used by parallel
-export -f analysis_1
-export -f analysis_2
-export -f analysis_3
-export -f analysis_4
-export -f analysis_5
-
-# Now run the analyses using GNU parallel. Keep in same order. Output to .xml files
-parallel analysis_1 ::: fragment_1.csv fragment_2.csv fragment_3.csv fragment_4.csv > \
+bin/fragmentor -i data/data.csv -f 1 -p ${SLURM_SUBMIT_DIR}/
+bin/analysis -i fragment_1.csv -c determine_most_popular_email > \
     most_popular_email.xml
-parallel analysis_2 ::: fragment_1.csv fragment_2.csv fragment_3.csv fragment_4.csv > \
+bin/analysis -i fragment_1.csv -c determine_most_popular_free_email > \
     most_popular_free_email.xml
-parallel analysis_3 ::: fragment_1.csv fragment_2.csv fragment_3.csv fragment_4.csv > \
+bin/analysis -i fragment_1.csv -c determine_most_popular_document_format > \
     most_popular_document_format.xml
-parallel analysis_4 ::: fragment_1.csv fragment_2.csv fragment_3.csv fragment_4.csv > \
+bin/analysis -i fragment_1.csv -c determine_most_popular_audio_format > \
     most_popular_audio_format.xml
-parallel analysis_5 ::: fragment_1.csv fragment_2.csv fragment_3.csv fragment_4.csv > \
+bin/analysis -i fragment_1.csv -c determine_most_popular_image_format > \
     most_popular_image_format.xml
 
 # Add root element to xml files using echo and tac
@@ -106,7 +67,6 @@ tac most_popular_image_format.xml > data.xml && \
 # most_popular_audio_format_pie_chart.png
 # most_popular_image_format_bar_graph.png
 # most_popular_image_format_pie_chart.png
-ls
 bin/graphgen -f most_popular_email.xml \
     most_popular_free_email.xml \
     most_popular_document_format.xml \
@@ -132,6 +92,5 @@ mv most_popular_image_format_pie_chart.png analysis_output
 # Change into the work directory and compress analysis_output into
 # a shareable zip file
 tar -czf analysis_output.tgz analysis_output
-rm -rf *.xml
-
+rm -rf *.xml *.csv
 echo Data analysis ended at $(date)
