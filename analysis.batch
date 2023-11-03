@@ -18,6 +18,7 @@ bin/fragmentor -i data/data.csv -f 4 -p $PWD
 
 # Functions to be used with GNU parallel
 function analysis_1 () {
+    cd ${SLURM_SUBMIT_DIR}
     . venv/bin/activate
     bin/analysis -i $1 -c determine_most_popular_email
 }
@@ -28,16 +29,19 @@ function analysis_2 () {
 }
 
 function analysis_3 () {
+    cd ${SLURM_SUBMIT_DIR}
     . venv/bin/activate
     bin/analysis -i $1 -c determine_most_popular_document_format
 }
 
 function analysis_4 () {
+    cd ${SLURM_SUBMIT_DIR}
     . venv/bin/activate
     bin/analysis -i $1 -c determine_most_popular_audio_format
 }
 
 function analysis_5 () {
+    cd ${SLURM_SUBMIT_DIR}
     . venv/bin/activate
     bin/analysis -i $1 -c determine_most_popular_image_format
 }
@@ -51,15 +55,15 @@ export -f analysis_5
 
 # Now run the analyses using GNU parallel. Keep in same order. Output to .xml files
 parallel analysis_1 ::: fragment_1.csv fragment_2.csv fragment_3.csv fragment_4.csv > \
-    ./most_popular_email.xml
+    most_popular_email.xml
 parallel analysis_2 ::: fragment_1.csv fragment_2.csv fragment_3.csv fragment_4.csv > \
-    ./most_popular_free_email.xml
+    most_popular_free_email.xml
 parallel analysis_3 ::: fragment_1.csv fragment_2.csv fragment_3.csv fragment_4.csv > \
-    ./most_popular_document_format.xml
+    most_popular_document_format.xml
 parallel analysis_4 ::: fragment_1.csv fragment_2.csv fragment_3.csv fragment_4.csv > \
-    ./most_popular_audio_format.xml
+    most_popular_audio_format.xml
 parallel analysis_5 ::: fragment_1.csv fragment_2.csv fragment_3.csv fragment_4.csv > \
-    ./most_popular_image_format.xml
+    most_popular_image_format.xml
 
 # Add root element to xml files using echo and tac
 # most_popular_email.xml
@@ -102,6 +106,7 @@ tac most_popular_image_format.xml > data.xml && \
 # most_popular_audio_format_pie_chart.png
 # most_popular_image_format_bar_graph.png
 # most_popular_image_format_pie_chart.png
+ls
 bin/graphgen -f most_popular_email.xml \
     most_popular_free_email.xml \
     most_popular_document_format.xml \
