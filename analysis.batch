@@ -1,0 +1,133 @@
+#!/bin/bash
+#SBATCH --job-name=analysis
+#SBATCH --partition=compute
+#SBATCH --nodes=1
+#SBATCH --mem=500mb
+#SBATCH --time=00:00:30
+#SBATCH --error=analysis.err
+#SBATCH --output=analysis.out
+
+
+
+echo Data analysis has started on $(hostname) at $(date)
+
+# Activate virtual environment
+cd ${SLURM_SUBMIT_DIR}
+. venv/bin/activate
+
+# Create the fragments in ~/scratch/tmp
+fragmentor -i data/data.csv -f 4 -p ~/scratch/tmp/
+
+# Functions to be used with GNU parallel
+function analysis_1 () {
+    . venv/bin/activate
+    analysis -i $1 -c determine_most_popular_email
+}
+
+function analysis_2 () {
+    . venv/bin/activate
+    analysis -i $1 -c determine_most_popular_free_email
+}
+
+function analysis_3 () {
+    . venv/bin/activate
+    analysis -i $1 -c determine_most_popular_document_format
+}
+
+function analysis_4 () {
+    . venv/bin/activate
+    analysis -i $1 -c determine_most_popular_audio_format
+}
+
+function analysis_5 () {
+    . venv/bin/activate
+    analysis -i $1 -c determine_most_popular_image_format
+}
+
+# Export functions so they can be used by parallel
+export -f analysis_1
+export -f analysis_2
+export -f analysis_3
+export -f analysis_4
+export -f analysis_5
+
+# Now run the analyses using GNU parallel. Keep in same order. Output to .xml files
+parallel -k analysis_1 ::: fragment_1.csv fragment_2.csv fragment_3.csv fragment_4.csv > \
+    ./most_popular_email.xml
+parallel -k analysis_2 ::: fragment_1.csv fragment_2.csv fragment_3.csv fragment_4.csv > \
+    ./most_popular_free_email.xml
+parallel -k analysis_3 ::: fragment_1.csv fragment_2.csv fragment_3.csv fragment_4.csv > \
+    ./most_popular_document_format.xml
+parallel -k analysis_4 ::: fragment_1.csv fragment_2.csv fragment_3.csv fragment_4.csv > \
+    ./most_popular_audio_format.xml
+parallel -k analysis_5 ::: fragment_1.csv fragment_2.csv fragment_3.csv fragment_4.csv > \
+    ./most_popular_image_format.xml
+
+# Add root element to xml files using echo and tac
+# most_popular_email.xml
+tac most_popular_email.xml > data.xml && \
+    echo '<root>' >> data.xml && \
+    tac data.xml > most_popular_email.xml && \
+    echo '</root>' >> most_popular_email.xml
+
+# most_popular_free_email.xml
+tac most_popular_free_email.xml > data.xml && \
+    echo '<root>' >> data.xml && \
+    tac data.xml > most_popular_free_email.xml && \
+    echo '</root>' >> most_popular_free_email.xml
+
+# most_popular_document_format.xml
+tac most_popular_document_format.xml > data.xml && \
+    echo '<root>' >> data.xml && \
+    tac data.xml > most_popular_document_format.xml && \
+    echo '</root>' >> most_popular_document_format.xml
+
+# most_popular_audio_format.xml
+tac most_popular_audio_format.xml > data.xml && \
+    echo '<root>' >> data.xml && \
+    tac data.xml > most_popular_audio_format.xml && \
+    echo '</root>' >> most_popular_audio_format.xml
+
+# most_popular_image_format.xml
+tac most_popular_image_format.xml > data.xml && \
+    echo '<root>' >> data.xml && \
+    tac data.xml > most_popular_image_format.xml && \
+    echo '</root>' >> most_popular_image_format.xml
+
+# Generate graphs most_popular_email_client_bar_graph.png,
+# most_popular_email_client_pie_chart.png
+# most_popular_free_email_client_bar_graph.png
+# most_popular_free_email_client_pie_chart.png
+# most_popular_document_format_bar_graph.png
+# most_popular_document_format_pie_chart.png
+# most_popular_audio_format_bar_graph.png
+# most_popular_audio_format_pie_chart.png
+# most_popular_image_format_bar_graph.png
+# most_popular_image_format_pie_chart.png
+graphgen -f most_popular_email.xml \
+    most_popular_free_email.xml \
+    most_popular_document_format.xml \
+    most_popular_audio_format.xml \
+    most_popular_image_format.xml
+
+# Move graphs to an output directory in work
+if [ ! -d analysis_output ]; then
+    mkdir -p analysis_output
+fi
+
+mv most_popular_email_client_bar_graph.png analysis_output
+mv most_popular_email_client_pie_chart.png analysis_output
+mv most_popular_free_email_client_bar_graph.png analysis_output
+mv most_popular_free_email_client_pie_chart.png analysis_output
+mv most_popular_document_format_bar_graph.png analysis_output
+mv most_popular_document_format_pie_chart.png analysis_output
+mv most_popular_audio_format_bar_graph.png analysis_output
+mv most_popular_audio_format_pie_chart.png analysis_output
+mv most_popular_image_format_bar_graph.png analysis_output
+mv most_popular_image_format_pie_chart.png analysis_output
+
+# Change into the work directory and compress analysis_output into
+# a shareable zip file
+zip -r analysis_output.zip analysis_output
+
+echo Data analysis ended at $(date)

@@ -1,0 +1,9 @@
+LICENSE
+README.md
+setup.py
+src/analysis.egg-info/PKG-INFO
+src/analysis.egg-info/SOURCES.txt
+src/analysis.egg-info/dependency_links.txt
+src/analysis.egg-info/entry_points.txt
+src/analysis.egg-info/requires.txt
+src/analysis.egg-info/top_level.txt

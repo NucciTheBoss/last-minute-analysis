@@ -1,0 +1,4 @@
+[console_scripts]
+analysis = analysis.main:main
+fragmentor = fragmentor.main:main
+graphgen = graphgen.main:main
