@@ -1,5 +1,0 @@
-Faker
-click
-matplotlib
-numpy
-progress
